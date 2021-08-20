@@ -1,1 +1,0 @@
-SELECT * FROM tutorial4.furniture;
