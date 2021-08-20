@@ -1,0 +1,160 @@
+from flask import Flask, jsonify, render_template, request
+
+app = Flask(__name__)
+
+
+# hardcode 1 user json object in the users List
+users = [
+    {"userid": 1, "username": "John", "email": "john@gmailer.com",
+        "role": "member", "password": "abc123"}
+]
+
+# GET all users
+
+
+@app.route('/users', methods=['GET'])
+def getUsers():
+    try:
+        output = {"Users": users}
+        return jsonify(output), 200
+    except Exception as err:
+        print(err)
+        output = {"Message": "Error occurred."}
+        return jsonify(output), 500
+
+# Get 1 User based on userid supplied
+
+
+@app.route('/users/<int:userid>', methods=['GET'])
+def getOneUser(userid):
+    try:
+        found = False
+        userData = ""
+        for user in users:
+            uid = user["userid"]
+            if userid == uid:  # match the client's userid supplied
+                found = True
+                userData = user
+                break
+        if found:
+            output = {"Users": userData}
+            return jsonify(output), 200
+        else:
+            output = {"Users": ""}
+            return jsonify(output), 404
+    except Exception as err:
+        print(err)
+        output = {"Message": "Error occurred."}
+        return jsonify(output), 500
+
+# POST 1 new user - Insert
+
+
+@app.route('/users', methods=['POST'])
+def insertUser():
+    try:
+
+        # extract the incoming request data from user
+        userData = request.json  # request.form.to_dict() ->if using html forms
+        print(userData)
+        userid = userData['userid']
+        username = userData['username']
+        email = userData['email']
+        role = userData['role']
+        password = userData['password']
+
+        user = {"userid": userid, "username": username,
+                "email": email, "role": role, "password": password}
+        users.append(user)  # insert into the list of users
+
+        output = {"Message": "Successful insertion"}
+        return jsonify(output), 201
+    except Exception as err:
+        print(err)
+        output = {"Message": "Error occurred."}
+        return jsonify(output), 500
+
+
+# GET all users with particular role in the querystring role
+# http://localhost:5000/usersQuery?role=...
+@app.route('/usersQuery', methods=['GET'])
+def getUsersByRole():
+    try:
+        queryString = request.args
+        print(queryString)
+        role = queryString['role']
+        found = False
+        userData = []
+        for user in users:
+            role0 = user["role"]
+            if role == role0:  # match the client's role supplied
+                found = True
+                userData.append(user)
+        if found:
+            output = {"Users": userData}
+            return jsonify(output), 200
+        else:
+            output = {"Users": ""}
+            return jsonify(output), 404
+
+    except Exception as err:
+        print(err)
+        output = {"Message": "Error occurred."}
+        return jsonify(output), 500
+
+
+@app.route('/users/<int:userid>', methods=['DELETE'])
+def deleteUser(userid):
+    try:
+        found = False
+        for user in users:
+            uid = user["userid"]
+
+            if userid == uid:  # match the client's role supplied
+                found = True
+        if found:
+            print("Delete User")
+            output = {"Message": "User with id" +
+                      str(userid) + " has been successfully deleted!"}
+            return jsonify(output), 200
+        else:
+            output = {"message": "user with id" +
+                      str(userid)+" does not exist!"}
+            return jsonify(output), 404
+
+    except Exception as err:
+        print(err)
+        output = {"Message": "Error occured."}
+        return jsonify(output), 500
+
+
+@app.route('/users/<int:userid>', methods=['PUT'])
+def PutUser(userid):
+    try:
+        userData = request.json  # request.form.to_dict() ->if using html forms
+        email = userData['email']
+
+        found = False
+        userData = ""
+        for user in users:
+            uid = user["userid"]
+            if userid == uid:
+                found = True
+                user["email"] = email
+                output = {
+                    "message": "User with id " + str(userid) + " has been successfully updated!"}
+                return jsonify(output), 200
+            else:
+                users.append(user)
+                output = {
+                    "message": "User with id " + str(userid) + " does not exist!"}
+                return jsonify(output), 404
+
+    except Exception as err:
+        print(err)
+        output = {"Message": "Error occured."}
+        return jsonify(output), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)  # start the flask app with default port 5000
